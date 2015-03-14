@@ -5,21 +5,143 @@ output:
     keep_md: true
 ---
 
+##Loading and preprocessing the data
 
-## Loading and preprocessing the data
-
-
+```{r,echo=TRUE}
+setwd("/home/srivasan/reproducible research")
+data1<-read.csv("activity.csv")
+data<-read.csv("activity.csv")
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+library(data.table)
+date<-unique(data$date)
+data<-subset(data,data$steps!='NA')
+dt<-data.table(data)
+dt2<-dt[,list(steps=sum(steps)),by="date"]
+head(dt2)
+```
 
+```{r,echo=TRUE}
+#steps<-dt2$steps
+#hist(steps,col="green")
+with(dt2, {
+    par(oma=c(2,0,0,0), mar=c(6.75,6.75,3,0), mgp=c(5.75,0.75,0), las=2)
+    barplot(
+      height=steps,
+      main="Graph of Total Steps taken per Day",
+      xlab="Dates",
+      ylab="Steps per Day",
+      names.arg=date,
+      space=c(0)
+    )
+})
+```
 
-## What is the average daily activity pattern?
+```{r}
+dt3<-dt[,list(steps=mean(steps)),by="date"]
+head(dt3)
+```
 
+```{r}
+dt4<-dt[,list(steps=median(steps)),by="date"]
+head(dt4)
+```
 
+##What is the average daily activity pattern?
 
-## Imputing missing values
+```{r}
+avarage_steps<-tapply(data1$steps,data1$interval,mean,na.rm=TRUE)
+interval<-unique(data1$interval)
+plot(interval,avarage_steps,type="l")
+head(avarage_steps)
+```
 
+###Avarage daily pattern
 
+```{r,warning=FALSE}
+head(dt)
+max_steps<-max(dt$steps)
+a<-which(dt$steps %in% max_steps)
+a1<-dt$interval[a]
+a2<-dt$date[a]
+data.frame(steps=max_steps,date=a2,interval=a1)
+```
 
-## Are there differences in activity patterns between weekdays and weekends?
+##Input Missing Values
+
+```{r}
+
+l1<-length(data1$steps)
+l2<-length(na.omit(data1$steps))
+l3<-l1-l2
+l3
+```
+
+```{r}
+a1<-as.numeric()
+b<-split(data$steps,data$interval)
+for(i in 1:288)
+{
+q<-as.numeric(unlist(b[i]))
+a1[i]<-median(q)
+}
+head(b)
+a1
+```
+
+```{r}
+head(data1)
+data1[is.na(data1)]<-a1[1:288]
+head(data1)
+```
+
+```{r}
+#new_sum<-tapply(data1$steps,data1$date,s
+#hist(new_sum)
+new_sum<-aggregate(data1$steps,by=list(data1$date),FUN=sum)
+with(new_sum, {
+    par(oma=c(2,0,0,0), mar=c(6.75,6.75,3,0), mgp=c(5.75,0.75,0), las=2)
+    barplot(
+      height=x,
+      main="Graph of Total Steps taken per Day",
+      xlab="Dates",
+      ylab="Steps per Day",
+      names.arg= Group.1,
+      space=c(0)
+    )
+})
+
+new_mean<-tapply(data1$steps,data1$date,mean)
+head(new_mean)
+new_median<-tapply(data1$steps,data1$date,median)
+head(new_median)
+```
+
+##Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+days<-as.Date(data1$date)
+week_days<-weekdays(days)
+week<-replace(week_days,week_days=="Sunday"|week_days=="Saturday","weekend")
+week<-replace(week,week_days=="Monday"|week_days=="Tuesday"|week_days=="Wednesday"|week_days=="Thursday"|week_days=="Friday","weekdays")
+w<-data.frame(data=data1,week=week)
+head(w)
+```
+
+```{r}
+step_taken<-tapply(data1$steps,data1$interval,mean)
+head(step_taken)
+weektype_plot<-aggregate(data=data1,steps~week + interval,FUN=mean)
+library("lattice")
+xyplot(
+    type="l",
+    data=weektype_plot,
+    steps ~ interval | week,
+    xlab="Interval",
+    ylab="Number of steps",
+    layout=c(1,2)
+)
+```
