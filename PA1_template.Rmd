@@ -59,8 +59,6 @@ plot(interval,avarage_steps,type="l")
 head(avarage_steps)
 ```
 
-###Avarage daily pattern
-
 ```{r,warning=FALSE}
 head(dt)
 max_steps<-max(dt$steps)
